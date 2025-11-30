@@ -1,0 +1,163 @@
+{
+  "format": 1,
+  "restore": {
+    "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Api\\OrderCatalogService.Api.csproj": {}
+  },
+  "projects": {
+    "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Api\\OrderCatalogService.Api.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Api\\OrderCatalogService.Api.csproj",
+        "projectName": "OrderCatalogService.Api",
+        "projectPath": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Api\\OrderCatalogService.Api.csproj",
+        "packagesPath": "C:\\Users\\JACK\\.nuget\\packages\\",
+        "outputPath": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Api\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\JACK\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {
+              "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Contracts\\OrderCatalogService.Contracts.csproj": {
+                "projectPath": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Contracts\\OrderCatalogService.Contracts.csproj"
+              }
+            }
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "dependencies": {
+            "Azure.Messaging.ServiceBus": {
+              "target": "Package",
+              "version": "[7.20.1, )"
+            },
+            "Azure.Monitor.OpenTelemetry.AspNetCore": {
+              "target": "Package",
+              "version": "[1.4.0, )"
+            },
+            "HotChocolate.AspNetCore": {
+              "target": "Package",
+              "version": "[15.1.11, )"
+            },
+            "MediatR": {
+              "target": "Package",
+              "version": "[13.1.0, )"
+            },
+            "Microsoft.AspNetCore.OpenApi": {
+              "target": "Package",
+              "version": "[7.0.1, )"
+            },
+            "Microsoft.Identity.Web": {
+              "target": "Package",
+              "version": "[4.1.1, )"
+            },
+            "Polly": {
+              "target": "Package",
+              "version": "[8.6.5, )"
+            },
+            "RedLock.net": {
+              "target": "Package",
+              "version": "[2.3.2, )"
+            },
+            "Serilog.AspNetCore": {
+              "target": "Package",
+              "version": "[10.0.0, )"
+            },
+            "Swashbuckle.AspNetCore": {
+              "target": "Package",
+              "version": "[6.4.0, )"
+            }
+          },
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.AspNetCore.App": {
+              "privateAssets": "none"
+            },
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.101\\RuntimeIdentifierGraph.json"
+        }
+      }
+    },
+    "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Contracts\\OrderCatalogService.Contracts.csproj": {
+      "version": "1.0.0",
+      "restore": {
+        "projectUniqueName": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Contracts\\OrderCatalogService.Contracts.csproj",
+        "projectName": "OrderCatalogService.Contracts",
+        "projectPath": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Contracts\\OrderCatalogService.Contracts.csproj",
+        "packagesPath": "C:\\Users\\JACK\\.nuget\\packages\\",
+        "outputPath": "E:\\NET\\OrderCatalogService\\src\\OrderCatalogService.Contracts\\obj\\",
+        "projectStyle": "PackageReference",
+        "configFilePaths": [
+          "C:\\Users\\JACK\\AppData\\Roaming\\NuGet\\NuGet.Config"
+        ],
+        "originalTargetFrameworks": [
+          "net7.0"
+        ],
+        "sources": {
+          "https://api.nuget.org/v3/index.json": {}
+        },
+        "frameworks": {
+          "net7.0": {
+            "targetAlias": "net7.0",
+            "projectReferences": {}
+          }
+        },
+        "warningProperties": {
+          "warnAsError": [
+            "NU1605"
+          ]
+        }
+      },
+      "frameworks": {
+        "net7.0": {
+          "targetAlias": "net7.0",
+          "imports": [
+            "net461",
+            "net462",
+            "net47",
+            "net471",
+            "net472",
+            "net48",
+            "net481"
+          ],
+          "assetTargetFallback": true,
+          "warn": true,
+          "frameworkReferences": {
+            "Microsoft.NETCore.App": {
+              "privateAssets": "all"
+            }
+          },
+          "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.101\\RuntimeIdentifierGraph.json"
+        }
+      }
+    }
+  }
+}

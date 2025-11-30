@@ -1,0 +1,310 @@
+# ═══════════════════════════════════════════════════════════
+# FILE: docker-compose.yml (Root Directory)
+# Complete local development environment
+# ═══════════════════════════════════════════════════════════
+
+version: '3.8'
+
+services:
+  # ═══════════════════════════════════════════════════════
+  # APPLICATION
+  # ═══════════════════════════════════════════════════════
+  order-catalog-api:
+    build:
+      context: .
+      dockerfile: src/OrderCatalogService.Api/Dockerfile
+    container_name: order-catalog-api
+    ports:
+      - "5000:8080"
+      - "5001:8081"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__PostgreSQL=Host=postgres;Database=OrderCatalogDb;Username=postgres;Password=postgres;Maximum Pool Size=200;Minimum Pool Size=10
+      - ConnectionStrings__Redis=redis:6379,abortConnect=false
+      - ServiceBus__ConnectionString=Endpoint=sb://localhost;SharedAccessKeyName=RootManageSharedAccessKey;SharedAccessKey=test
+      - Seq__Url=http://seq:5341
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      seq:
+        condition: service_started
+    networks:
+      - order-catalog-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health/live"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════
+  # POSTGRESQL DATABASE
+  # ═══════════════════════════════════════════════════════
+  postgres:
+    image: postgres:15-alpine
+    container_name: order-catalog-postgres
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: OrderCatalogDb
+      PGDATA: /var/lib/postgresql/data/pgdata
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/init-db.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - order-catalog-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+    command: 
+      - "postgres"
+      - "-c"
+      - "max_connections=200"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "effective_cache_size=1GB"
+      - "-c"
+      - "maintenance_work_mem=64MB"
+      - "-c"
+      - "checkpoint_completion_target=0.9"
+      - "-c"
+      - "wal_buffers=16MB"
+      - "-c"
+      - "default_statistics_target=100"
+      - "-c"
+      - "random_page_cost=1.1"
+      - "-c"
+      - "effective_io_concurrency=200"
+
+  # ═══════════════════════════════════════════════════════
+  # REDIS CACHE
+  # ═══════════════════════════════════════════════════════
+  redis:
+    image: redis:7-alpine
+    container_name: order-catalog-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - order-catalog-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    restart: unless-stopped
+    command: >
+      redis-server
+      --maxmemory 512mb
+      --maxmemory-policy allkeys-lru
+      --appendonly yes
+      --appendfsync everysec
+
+  # ═══════════════════════════════════════════════════════
+  # SEQ (STRUCTURED LOGGING)
+  # ═══════════════════════════════════════════════════════
+  seq:
+    image: datalust/seq:latest
+    container_name: order-catalog-seq
+    environment:
+      ACCEPT_EULA: "Y"
+    ports:
+      - "5341:80"
+    volumes:
+      - seq-data:/data
+    networks:
+      - order-catalog-network
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════
+  # JAEGER (DISTRIBUTED TRACING)
+  # ═══════════════════════════════════════════════════════
+  jaeger:
+    image: jaegertracing/all-in-one:latest
+    container_name: order-catalog-jaeger
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    ports:
+      - "6831:6831/udp"  # Jaeger agent
+      - "16686:16686"    # Jaeger UI
+      - "4317:4317"      # OTLP gRPC
+      - "4318:4318"      # OTLP HTTP
+    networks:
+      - order-catalog-network
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════
+  # PROMETHEUS (METRICS)
+  # ═══════════════════════════════════════════════════════
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: order-catalog-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    networks:
+      - order-catalog-network
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════
+  # GRAFANA (DASHBOARDS)
+  # ═══════════════════════════════════════════════════════
+  grafana:
+    image: grafana/grafana:latest
+    container_name: order-catalog-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      GF_SECURITY_ADMIN_USER: admin
+      GF_SECURITY_ADMIN_PASSWORD: admin
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards
+    networks:
+      - order-catalog-network
+    depends_on:
+      - prometheus
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════
+  # PGADMIN (DATABASE MANAGEMENT UI)
+  # ═══════════════════════════════════════════════════════
+  pgadmin:
+    image: dpage/pgadmin4:latest
+    container_name: order-catalog-pgadmin
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@admin.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+    ports:
+      - "5050:80"
+    volumes:
+      - pgadmin-data:/var/lib/pgadmin
+    networks:
+      - order-catalog-network
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  # ═══════════════════════════════════════════════════════
+  # REDIS COMMANDER (REDIS UI)
+  # ═══════════════════════════════════════════════════════
+  redis-commander:
+    image: rediscommander/redis-commander:latest
+    container_name: order-catalog-redis-commander
+    environment:
+      REDIS_HOSTS: local:redis:6379
+    ports:
+      - "8081:8081"
+    networks:
+      - order-catalog-network
+    depends_on:
+      - redis
+    restart: unless-stopped
+
+# ═══════════════════════════════════════════════════════════
+# VOLUMES
+# ═══════════════════════════════════════════════════════════
+volumes:
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
+  seq-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+  pgadmin-data:
+    driver: local
+
+# ═══════════════════════════════════════════════════════════
+# NETWORKS
+# ═══════════════════════════════════════════════════════════
+networks:
+  order-catalog-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
+
+# ═══════════════════════════════════════════════════════════
+# FILE: docker-compose.override.yml (Development Overrides)
+# ═══════════════════════════════════════════════════════════
+
+# version: '3.8'
+# 
+# services:
+#   order-catalog-api:
+#     environment:
+#       - ASPNETCORE_ENVIRONMENT=Development
+#       - ASPNETCORE_Kestrel__Certificates__Default__Password=password
+#       - ASPNETCORE_Kestrel__Certificates__Default__Path=/https/aspnetapp.pfx
+#     volumes:
+#       - ~/.aspnet/https:/https:ro
+#     ports:
+#       - "5000:8080"
+#       - "5001:8081"
+
+# ═══════════════════════════════════════════════════════════
+# FILE: monitoring/prometheus.yml
+# Prometheus scrape configuration
+# ═══════════════════════════════════════════════════════════
+
+# global:
+#   scrape_interval: 15s
+#   evaluation_interval: 15s
+#   external_labels:
+#     monitor: 'order-catalog-monitor'
+# 
+# scrape_configs:
+#   - job_name: 'order-catalog-api'
+#     static_configs:
+#       - targets: ['order-catalog-api:8080']
+#     metrics_path: '/metrics'
+#     scrape_interval: 10s
+# 
+#   - job_name: 'prometheus'
+#     static_configs:
+#       - targets: ['localhost:9090']
+
+# ═══════════════════════════════════════════════════════════
+# FILE: scripts/init-db.sql
+# Database initialization script
+# ═══════════════════════════════════════════════════════════
+
+# -- Create extensions
+# CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+# CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+# 
+# -- Create database (if not exists)
+# -- Already created by POSTGRES_DB environment variable
+# 
+# -- Performance tuning
+# ALTER SYSTEM SET shared_preload_libraries = 'pg_stat_statements';
+# ALTER SYSTEM SET track_activity_query_size = 2048;
+# ALTER SYSTEM SET pg_stat_statements.track = 'all';
+# 
+# -- Grant permissions
+# GRANT ALL PRIVILEGES ON DATABASE "OrderCatalogDb" TO postgres;
