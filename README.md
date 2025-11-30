@@ -707,4 +707,4 @@ MIT License - see [LICENSE](LICENSE) file
 
 ---
 
-**Built with ❤️ by the Platform Engineering Team**
+**Built with ❤️ by the ThirstyBrain**
