@@ -8,6 +8,8 @@
 
 Built with .NET 8, Azure cloud services, and battle-tested concurrency patterns. Exposes both REST and GraphQL APIs with complete observability, idempotency guarantees, and zero duplicate orders under retry storms.
 
+This is for POC 
+
 ---
 
 ## 🚀 Quick Start
